@@ -1,0 +1,14 @@
+
+file:snippet:app/Main.hs:main
+
+* This is a test
+
+#+BEGIN_SRC c
+program
+#+END_SRC
+
+** This is a subsection
+
+#+BEGIN_SRC sh
+ld a, b
+#+END_SRC

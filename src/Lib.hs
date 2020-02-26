@@ -4,24 +4,41 @@
 
 module Lib where
 
-import Data.List
-import Control.Arrow
-import Data.Foldable
-import Data.List (uncons, sort)
-import Snippets
-import Text.Pandoc
-import CSV
+import           Control.Arrow
+import           CSV
 import qualified Data.ByteString.Lazy as BS
-import qualified Data.Vector as V
+import           Data.Foldable
+import           Data.List
+import           Data.List            (sort, uncons)
+import qualified Data.Vector          as V
+import           Snippets
+import           Text.Pandoc
 
+isSnippet :: String -> IO (Maybe (FilePath, Maybe String))
+isSnippet args =  do
+   qs <- pure $ splitArgs args
+   if (length qs > 2) then do
+           (file: sp: fp : more_args) <- pure $ splitArgs args
+           return $ if (sp == "snippet") && file == "file" then
+             Just (fp, fmap fst $ uncons more_args)
+             else
+             Nothing
+   else return Nothing
+
+isSnipBlock :: Block -> IO (Maybe (FilePath, Maybe String))
+isSnipBlock (Para [Link _ (Strs t) (_, _)])  = isSnippet t
+isSnipBlock (Plain [Link _ (Strs t) (_, _)]) = isSnippet t
+isSnipBlock _                                = return Nothing
 
 inlineSnippets :: Block -> IO Block
-inlineSnippets = \case
-  Para [Link _ (Strs t) ("Snip", _)]  -> runSnippet t
-  Plain [Link _ (Strs t) ("Snip", _)] -> runSnippet t
-  t -> pure t
+inlineSnippets b = do
+        sb <-  (isSnipBlock b)
+        case sb of
+         (Just (fp,xx)) -> snippet fp xx
+         _              -> return b
 
   where
+
     runSnippet :: String -> IO Block
     runSnippet args = do
       (fp : more_args) <- pure $ splitArgs args
@@ -62,12 +79,12 @@ pattern Strs ts <-
 
 isStr :: Inline -> Bool
 isStr (Str _) = True
-isStr Space = True
-isStr _ = False
+isStr Space   = True
+isStr _       = False
 
 fromStr :: Inline -> String
 fromStr (Str s) = s
-fromStr Space = " "
+fromStr Space   = " "
 
 
 showVector :: V.Vector String -> Block
@@ -84,7 +101,7 @@ codeBlock = CodeBlock ("", ["haskell"], [])
 splitArgs :: String -> [String]
 splitArgs s =
   case break (== ':') s of
-    ("", "") -> []
-    (as, "") -> [as]
+    ("", "")           -> []
+    (as, "")           -> [as]
     (as, drop 1 -> bs) -> as : splitArgs bs
 
