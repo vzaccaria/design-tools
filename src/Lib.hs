@@ -47,7 +47,7 @@ inlineSnippets b = do
     snippet :: FilePath -> Maybe String -> IO Block
     snippet fp defn = do
       file <- readFile fp
-      pure $ codeBlock $ getDefinition fp file defn
+      pure $ mintedBlock $ getDefinition fp file defn
 
 
 showCSV :: Block -> IO Block
@@ -96,6 +96,11 @@ showVector = BulletList
 
 codeBlock :: String -> Block
 codeBlock = CodeBlock ("", ["haskell"], [])
+
+mintedBlock :: String -> Block
+mintedBlock b = RawBlock (Format "latex")
+    ("\\begin{minted}[obeytabs=true,autogobble,baselinestretch=0.95,linenos=true]{haskell}\n" ++ b ++ "\\end{minted}")
+
 
 
 splitArgs :: String -> [String]
